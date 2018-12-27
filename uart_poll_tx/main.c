@@ -4,6 +4,7 @@ UART_TypeDef *uart = UART0;
 
 volatile uint32_t SYSTICK = 0;
 
+//-----------------------------------------------------------------------------
 void SysTick_Handler(void)
 {
     (void)SysTick->CTRL;        // read to clear flag
@@ -19,12 +20,14 @@ void delay_ms(uint32_t d)
     }
 }
 
+//-----------------------------------------------------------------------------
 void GPIO_Init(void)
 {
     // TX0 & RX0
     GPIOC->ALTFUNCSET = 0x3;
 }
 
+//-----------------------------------------------------------------------------
 void DPLL_Init(void)
 {
     // turn on DPLL
@@ -32,6 +35,7 @@ void DPLL_Init(void)
     while ((SYSCTRL->SYS_CLK_STA & 0x1) == 0);
 }
 
+//-----------------------------------------------------------------------------
 void SER_Init(void)
 {
     // uart frame settings
@@ -56,10 +60,16 @@ int32_t SER_put(uint8_t c)
     return c;
 }
 
+//-----------------------------------------------------------------------------
 int main(void)
 {
+    // initialize GPIO for TX0 & RX0
     GPIO_Init();
+    
+    // Enable DPLL for uart clock
     DPLL_Init();
+    
+    // Configure and enable uart
     SER_Init();
     
     // systick at 1000Hz
