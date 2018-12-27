@@ -1,6 +1,25 @@
 #include "gct301s.h"
 
+//-----------------------------------------------------------------------------
+// Select UART to use
+#define USE_UART    5
+
+//-----------------------------------------------------------------------------
+#if (USE_UART==0)
 UART_TypeDef *uart = UART0;
+#elif (USE_UART==1)
+UART_TypeDef *uart = UART1;
+#elif (USE_UART==2)
+UART_TypeDef *uart = UART2;
+#elif (USE_UART==3)
+UART_TypeDef *uart = UART3;
+#elif (USE_UART==4)
+UART_TypeDef *uart = UART4;
+#elif (USE_UART==5)
+UART_TypeDef *uart = UART5;
+#else
+UART_TypeDef *uart = UART0;
+#endif
 
 volatile uint32_t SYSTICK = 0;
 
@@ -23,8 +42,22 @@ void delay_ms(uint32_t d)
 //-----------------------------------------------------------------------------
 void GPIO_Init(void)
 {
-    // TX0 & RX0
-    GPIOC->ALTFUNCSET = 0x3;
+#if (USE_UART==0)
+    GPIOC->ALTFUNCSET = BV(1) | BV(0);
+#elif (USE_UART==1)
+    GPIOC->ALTFUNCSET = BV(3) | BV(2);
+#elif (USE_UART==2)
+    GPIOC->ALTFUNCSET = BV(5) | BV(4);
+#elif (USE_UART==3)
+    GPIOA->ALTFUNCSET = BV(11) | BV(10);    // GPIOA
+#elif (USE_UART==4)
+    GPIOC->ALTFUNCSET = BV(7) | BV(6);
+#elif (USE_UART==5)
+    GPIOA->ALTFUNCSET = BV(7) | BV(6);      // GPIOA
+#else
+    GPIOC->ALTFUNCSET = BV(1) | BV(0);
+#endif    
+    
 }
 
 //-----------------------------------------------------------------------------
