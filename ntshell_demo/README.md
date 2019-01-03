@@ -1,4 +1,4 @@
-#Natural Tiny Shell for GCT301S
+# Natural Tiny Shell for GCT301S
 
 Currently implemented two shell commands:
 1. memory read word  : mrw address
