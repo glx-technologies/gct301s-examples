@@ -6,6 +6,8 @@
 
 ntstdio_t handle;
 
+const char INIT_PROMPT[] = "NTShell for GCT301S v0.0.0\r\n";
+
 //-----------------------------------------------------------------------------
 // Select UART to use
 #define USE_UART    0
@@ -51,6 +53,12 @@ void delay_ms(uint32_t d)
     while (SYSTICK < end_tick) {
         __NOP();
     }
+}
+
+//-----------------------------------------------------------------------------
+void HardFault_Handler(void)
+{
+    NVIC_SystemReset();
 }
 
 //-----------------------------------------------------------------------------
@@ -242,14 +250,29 @@ static int usrcmd_help(int argc, char **argv)
 
 static int usrcmd_info(int argc, char **argv)
 {
-    uart_puts("NTShell for GCT301S v0.0.0\r\n");
+    uart_puts(INIT_PROMPT);
     return 0;
 }
 
 static int usrcmd_mww(int argc, char **argv)
 {
-    uart_puts("Memory write word\r\n");
-    return 0;
+    uint32_t addr;
+    uint32_t data;
+    int retval;
+    
+    if (argc != 3) {
+        uart_puts("Write memory word - missing address\r\n");
+        retval = 1;
+    }
+    else {
+        addr = hex_str_to_uint(argv[1]);
+        addr &= ~(0x3); // word aligned
+        data = hex_str_to_uint(argv[2]);
+        M32(addr) = data;
+        ntstdio_printf(&handle, "Write addr = %08x data = 0x%08x\r\n", addr, data);
+        retval = 0;
+    }
+    return retval;
 }
 
 static int usrcmd_mrw(int argc, char **argv)
@@ -258,9 +281,8 @@ static int usrcmd_mrw(int argc, char **argv)
     uint32_t data;
     int retval;
     
-    uart_puts("Memory read word\r\n");
     if (argc != 2) {
-        uart_puts("Missing address\r\n");
+        uart_puts("Read memory word - missing address\r\n");
         retval = 1;
     }
     else {
@@ -268,7 +290,7 @@ static int usrcmd_mrw(int argc, char **argv)
         addr = hex_str_to_uint(argv[1]);
         addr &= ~(0x3); // word aligned
         data = M32(addr);
-        ntstdio_printf(&handle, "addr = %08x data = 0x%08x\r\n", addr, data);
+        ntstdio_printf(&handle, "Read addr = %08x data = 0x%08x\r\n", addr, data);
         retval = 0;
     }
     return retval;
@@ -339,6 +361,7 @@ int main(void)
     
     ntshell_init(&ntshell, func_read, func_write, func_callback, (void *)&ntshell);
     uart_puts("\r\n");
+    uart_puts(INIT_PROMPT);
     ntshell_set_prompt(&ntshell, "> ");
     
     ntshell_execute(&ntshell);
