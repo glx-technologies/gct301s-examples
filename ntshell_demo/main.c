@@ -213,7 +213,7 @@ static const cmd_table_t cmdlist[] = {
     { "info", " Firmware info.", usrcmd_info },
     { "m32",  " Memory word access      > m32 addr [data]", usrcmd_m32 },
     { "m16",  " Memory half-word access > m16 addr [data]", usrcmd_m16 },
-    { "m8",   " Memory word access      > m8  addr [data]", usrcmd_m8  },
+    { "m8",   " Memory byte access      > m8  addr [data]", usrcmd_m8  },
 };
 
 int usrcmd_execute(const char *text)
