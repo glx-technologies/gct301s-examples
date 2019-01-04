@@ -198,8 +198,9 @@ typedef int (*USRCMDFUNC)(int argc, char **argv);
 static int usrcmd_ntopt_callback(int argc, char **argv, void *extobj);
 static int usrcmd_help(int argc, char **argv);
 static int usrcmd_info(int argc, char **argv);
-static int usrcmd_mww(int argc, char **argv);
-static int usrcmd_mrw(int argc, char **argv);
+static int usrcmd_m8(int argc, char **argv);
+static int usrcmd_m16(int argc, char **argv);
+static int usrcmd_m32(int argc, char **argv);
 
 typedef struct {
     char *cmd;
@@ -208,10 +209,11 @@ typedef struct {
 } cmd_table_t;
 
 static const cmd_table_t cmdlist[] = {
-    { "help", "This is a description text string for help command.", usrcmd_help },
-    { "info", "This is a description text string for info command.", usrcmd_info },
-    { "mww", "Memory write word command.", usrcmd_mww },
-    { "mrw", "Memory read word command.", usrcmd_mrw },
+    { "help", " Help on commands.", usrcmd_help },
+    { "info", " Firmware info.", usrcmd_info },
+    { "m32",  " Memory word access      > m32 addr [data]", usrcmd_m32 },
+    { "m16",  " Memory half-word access > m16 addr [data]", usrcmd_m16 },
+    { "m8",   " Memory word access      > m8  addr [data]", usrcmd_m8  },
 };
 
 int usrcmd_execute(const char *text)
@@ -253,18 +255,76 @@ static int usrcmd_info(int argc, char **argv)
     uart_puts(INIT_PROMPT);
     return 0;
 }
-
-static int usrcmd_mww(int argc, char **argv)
+static int usrcmd_m8(int argc, char **argv)
+{
+    uint32_t addr;
+    uint8_t data;
+    int retval;
+    
+    if (argc == 2) {
+        //addr = dec_str_to_uint(argv[1]);
+        addr = hex_str_to_uint(argv[1]);
+        data = M8(addr);
+        ntstdio_printf(&handle, "Read addr = %08x data = 0x%02x\r\n", addr, data);
+        retval = 0;
+    }
+    else if (argc == 3) {
+        addr = hex_str_to_uint(argv[1]);
+        data = hex_str_to_uint(argv[2]);
+        M8(addr) = data;
+        ntstdio_printf(&handle, "Write addr = %08x data = 0x%02x\r\n", addr, data);
+        retval = 0;
+    }
+    else {
+        uart_puts("missing address/data\r\n");
+        retval = 1;
+    }
+    return retval;
+}
+static int usrcmd_m16(int argc, char **argv)
 {
     uint32_t addr;
     uint32_t data;
     int retval;
     
-    if (argc != 3) {
-        uart_puts("Write memory word - missing address\r\n");
-        retval = 1;
+    if (argc == 2) {
+        //addr = dec_str_to_uint(argv[1]);
+        addr = hex_str_to_uint(argv[1]);
+        addr &= ~(0x1); // half-word aligned
+        data = M16(addr);
+        ntstdio_printf(&handle, "Read addr = %08x data = 0x%04x\r\n", addr, data);
+        retval = 0;
+    }
+    else if (argc == 3) {
+        addr = hex_str_to_uint(argv[1]);
+        addr &= ~(0x1); // half-word aligned
+        data = hex_str_to_uint(argv[2]);
+        M16(addr) = data;
+        ntstdio_printf(&handle, "Write addr = %08x data = 0x%04x\r\n", addr, data);
+        retval = 0;
     }
     else {
+        uart_puts("missing address/data\r\n");
+        retval = 1;
+    }
+    return retval;
+}
+
+static int usrcmd_m32(int argc, char **argv)
+{
+    uint32_t addr;
+    uint32_t data;
+    int retval;
+    
+    if (argc == 2) {
+        //addr = dec_str_to_uint(argv[1]);
+        addr = hex_str_to_uint(argv[1]);
+        addr &= ~(0x3); // word aligned
+        data = M32(addr);
+        ntstdio_printf(&handle, "Read addr = %08x data = 0x%08x\r\n", addr, data);
+        retval = 0;
+    }
+    else if (argc == 3) {
         addr = hex_str_to_uint(argv[1]);
         addr &= ~(0x3); // word aligned
         data = hex_str_to_uint(argv[2]);
@@ -272,26 +332,9 @@ static int usrcmd_mww(int argc, char **argv)
         ntstdio_printf(&handle, "Write addr = %08x data = 0x%08x\r\n", addr, data);
         retval = 0;
     }
-    return retval;
-}
-
-static int usrcmd_mrw(int argc, char **argv)
-{
-    uint32_t addr;
-    uint32_t data;
-    int retval;
-    
-    if (argc != 2) {
-        uart_puts("Read memory word - missing address\r\n");
-        retval = 1;
-    }
     else {
-        //addr = dec_str_to_uint(argv[1]);
-        addr = hex_str_to_uint(argv[1]);
-        addr &= ~(0x3); // word aligned
-        data = M32(addr);
-        ntstdio_printf(&handle, "Read addr = %08x data = 0x%08x\r\n", addr, data);
-        retval = 0;
+        uart_puts("missing address/data\r\n");
+        retval = 1;
     }
     return retval;
 }
